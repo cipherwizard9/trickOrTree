@@ -1,0 +1,484 @@
+{
+  "description": "Trick or Tree Chatbot Flow",
+  "states": [
+    {
+      "name": "Trigger",
+      "type": "trigger",
+      "transitions": [
+        {
+          "next": "welcome",
+          "event": "incomingMessage"
+        },
+        {
+          "event": "incomingCall"
+        },
+        {
+          "event": "incomingRequest"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 0,
+          "y": 0
+        }
+      }
+    },
+    {
+      "name": "trickOrTreatPrompt",
+      "type": "send-and-wait-for-reply",
+      "transitions": [
+        {
+          "next": "split_trick_or_treat",
+          "event": "incomingMessage"
+        },
+        {
+          "event": "timeout"
+        },
+        {
+          "event": "deliveryFailure"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -870,
+          "y": 450
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{flow.channel.address}}",
+        "body": "Hi, {{widgets.welcome.inbound.Body}} \n☠️ TRICK OR TREAT 🍬",
+        "timeout": "300"
+      }
+    },
+    {
+      "name": "split_trick_or_treat",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "event": "noMatch"
+        },
+        {
+          "next": "TrickPrompt",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value matches_any_of Trick, trick, TRICK",
+              "arguments": [
+                "{{widgets.trickOrTreatPrompt.inbound.Body}}"
+              ],
+              "type": "matches_any_of",
+              "value": "Trick, trick, TRICK"
+            }
+          ]
+        },
+        {
+          "next": "treatOrTree",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value matches_any_of treat, Treat, TREAT",
+              "arguments": [
+                "{{widgets.trickOrTreatPrompt.inbound.Body}}"
+              ],
+              "type": "matches_any_of",
+              "value": "treat, Treat, TREAT"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{widgets.trickOrTreatPrompt.inbound.Body}}",
+        "offset": {
+          "x": -180,
+          "y": 530
+        }
+      }
+    },
+    {
+      "name": "TrickPrompt",
+      "type": "send-and-wait-for-reply",
+      "transitions": [
+        {
+          "next": "yes_no",
+          "event": "incomingMessage"
+        },
+        {
+          "event": "timeout"
+        },
+        {
+          "event": "deliveryFailure"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -130,
+          "y": 790
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{flow.channel.address}}",
+        "body": "🎃🎃🎃\n☠️☠️☠️☠️☠️☠️☠️☠️☠️☠️\nYou have selected trick. \nAre you ready for the question.\nReply with YES. if you are ready else reply NO. If you reply NO, your quest will end and you will not be provided any treat.\n☠️☠️☠️☠️☠️☠️☠️☠️☠️☠️\n🎃🎃🎃",
+        "timeout": "300"
+      }
+    },
+    {
+      "name": "yes_no",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "event": "noMatch"
+        },
+        {
+          "next": "quest",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value equal_to YES",
+              "arguments": [
+                "{{widgets.TrickPrompt.inbound.Body}}"
+              ],
+              "type": "equal_to",
+              "value": "YES"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{widgets.TrickPrompt.inbound.Body}}",
+        "offset": {
+          "x": -230,
+          "y": 1060
+        }
+      }
+    },
+    {
+      "name": "quest",
+      "type": "send-and-wait-for-reply",
+      "transitions": [
+        {
+          "next": "quest_result",
+          "event": "incomingMessage"
+        },
+        {
+          "next": "send_message",
+          "event": "timeout"
+        },
+        {
+          "event": "deliveryFailure"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -250,
+          "y": 1380
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{flow.channel.address}}",
+        "body": "How many times can you subtract the number 5 from 75?\nNote: You have 2 minutes to answer.",
+        "timeout": "120"
+      }
+    },
+    {
+      "name": "send_message",
+      "type": "send-message",
+      "transitions": [
+        {
+          "event": "sent"
+        },
+        {
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -170,
+          "y": 1630
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{flow.channel.address}}",
+        "to": "{{contact.channel.address}}",
+        "body": "Hi, you were not able to answer the quest in 2minutes.\nSorry.\n ⚰️  ⚰️  ⚰️"
+      }
+    },
+    {
+      "name": "quest_result",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "next": "fail",
+          "event": "noMatch"
+        },
+        {
+          "next": "Winner",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value matches_any_of Once, once, ONCE, 1",
+              "arguments": [
+                "{{widgets.quest.inbound.Body}}"
+              ],
+              "type": "matches_any_of",
+              "value": "Once, once, ONCE, 1"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{widgets.quest.inbound.Body}}",
+        "offset": {
+          "x": -700,
+          "y": 1660
+        }
+      }
+    },
+    {
+      "name": "fail",
+      "type": "send-message",
+      "transitions": [
+        {
+          "event": "sent"
+        },
+        {
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -1070,
+          "y": 1950
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{flow.channel.address}}",
+        "to": "{{contact.channel.address}}",
+        "body": "Oh No, this is not the correct answer.\n\nCorrect answer is Once.\nAs once you subtract 5 from 75 then you have to subtract 5 from 70 not 75. \n🎃🎃🎃"
+      }
+    },
+    {
+      "name": "treatOrTree",
+      "type": "send-and-wait-for-reply",
+      "transitions": [
+        {
+          "next": "split_tree_treat",
+          "event": "incomingMessage"
+        },
+        {
+          "event": "timeout"
+        },
+        {
+          "event": "deliveryFailure"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 300,
+          "y": 850
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{flow.channel.address}}",
+        "body": "🎃🧟‍♀️🧟‍♂️🍬🍫👻\nThis time in Halloween, we have a new surprise for you.\nTo save environment, we are giving a plant as a treat instead of candies. The plant you can grow in your courtyard and will be your best friend.\n🎃🧟‍♀️🧟‍♂️🍬🍫👻\n\nIf you want candies, type TREAT and if you want tree, select  TREE",
+        "timeout": "120"
+      }
+    },
+    {
+      "name": "split_tree_treat",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "event": "noMatch"
+        },
+        {
+          "next": "send_confirmation",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value equal_to TREE",
+              "arguments": [
+                "{{widgets.treatOrTree.inbound.Body}}"
+              ],
+              "type": "equal_to",
+              "value": "TREE"
+            }
+          ]
+        },
+        {
+          "next": "sendconfirmation_treat",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value equal_to TREAT",
+              "arguments": [
+                "{{widgets.treatOrTree.inbound.Body}}"
+              ],
+              "type": "equal_to",
+              "value": "TREAT"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{widgets.treatOrTree.inbound.Body}}",
+        "offset": {
+          "x": 250,
+          "y": 1110
+        }
+      }
+    },
+    {
+      "name": "send_confirmation",
+      "type": "send-message",
+      "transitions": [
+        {
+          "next": "function_sendSMS_tree",
+          "event": "sent"
+        },
+        {
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 240,
+          "y": 1770
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{flow.channel.address}}",
+        "to": "{{contact.channel.address}}",
+        "body": "🌳🎄🌲🌳🎄🌲🌳🎄🌲\nWohooo!!!\nYou selected TREE to plant. But, this is Halloween, you will also get Candiessss🍬🍬🍬🍬🍬\n🎃🎃🎃🎃\nThank you and Happy Halloween {{widgets.welcome.inbound.Body}} \n🎃🎃🎃"
+      }
+    },
+    {
+      "name": "sendconfirmation_treat",
+      "type": "send-message",
+      "transitions": [
+        {
+          "next": "function_sendSMS_treat",
+          "event": "sent"
+        },
+        {
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 710,
+          "y": 1760
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{flow.channel.address}}",
+        "to": "{{contact.channel.address}}",
+        "body": "Wohooo!!!\nYou selected treat, Candiessss🍬🍬🍬🍬🍬 are getting ready for you.\n🎃🎃🎃🎃\nThank you and Happy Halloween {{widgets.welcome.inbound.Body}} \n🎃🎃🎃"
+      }
+    },
+    {
+      "name": "Winner",
+      "type": "send-message",
+      "transitions": [
+        {
+          "next": "treatOrTree",
+          "event": "sent"
+        },
+        {
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -590,
+          "y": 1910
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{flow.channel.address}}",
+        "to": "{{contact.channel.address}}",
+        "body": "You won the quest now its time for a treat 🍬"
+      }
+    },
+    {
+      "name": "welcome",
+      "type": "send-and-wait-for-reply",
+      "transitions": [
+        {
+          "next": "trickOrTreatPrompt",
+          "event": "incomingMessage"
+        },
+        {
+          "event": "timeout"
+        },
+        {
+          "event": "deliveryFailure"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -620,
+          "y": 200
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{flow.channel.address}}",
+        "body": "🎃🎃🎃Happy Halloween🎃🎃🎃 \n\nPlease reply with your Name:",
+        "timeout": "120"
+      }
+    },
+    {
+      "name": "function_sendSMS_tree",
+      "type": "run-function",
+      "transitions": [
+        {
+          "event": "success"
+        },
+        {
+          "event": "fail"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 260,
+          "y": 2110
+        },
+        "parameters": [
+          {
+            "value": "{{widgets.welcome.inbound.Body}} has selected tree!",
+            "key": "Body"
+          }
+        ],
+        "url": "https://orchid-bulldog-8868.twil.io/sendSms"
+      }
+    },
+    {
+      "name": "function_sendSMS_treat",
+      "type": "run-function",
+      "transitions": [
+        {
+          "event": "success"
+        },
+        {
+          "event": "fail"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 960,
+          "y": 2080
+        },
+        "parameters": [
+          {
+            "value": "{{widgets.welcome.inbound.Body}} has selected treat!",
+            "key": "Body"
+          }
+        ],
+        "url": "https://orchid-bulldog-8868.twil.io/sendSms"
+      }
+    }
+  ],
+  "initial_state": "Trigger",
+  "flags": {
+    "allow_concurrent_calls": true
+  }
+}
